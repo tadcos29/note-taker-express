@@ -25,7 +25,7 @@ app.get('/api/notes', (req,res) => {
         } else {
           const extantNotes = JSON.parse(data);
           console.log('GET request received -');
-          console.log(extantNotes);
+          // respond with the contents of the notes
           res.json(extantNotes);
         }
       });
@@ -40,13 +40,17 @@ app.post('/api/notes', (req,res) => {
     } else {
       const {title, text} = req.body
       if(title) {
+        // read existing notes
         const extantNotes = JSON.parse(data);
+        // construct a new note object, adding a unique id via uniqid() package
         const newNote = {
           id:uniqid(),
           title,
           text,
         }
+        // add new note to existing notes
         extantNotes.push(newNote);
+        // write the updated note object to the array in db.json
         fs.writeFile(
           './db/db.json',
           JSON.stringify(extantNotes, null, 4),
@@ -57,7 +61,6 @@ app.post('/api/notes', (req,res) => {
               );
 
         console.log('POST request received -');
-        console.log(newNote);
         res.status(201).json({status:'success',body:extantNotes});
       }
     }
@@ -66,22 +69,24 @@ app.post('/api/notes', (req,res) => {
 });
 
 app.delete('/api/notes/:noteId', (req,res) => {
-console.log();
-  fs.readFile('./db/db.json', 'utf8', (err, data) => {
+  let spliceId;
+  suppliedId=req.params.noteId;
+    fs.readFile('./db/db.json', 'utf8', (err, data) => {
     if (err) {
       console.error(data);
       res.json('An error has occurred when reading notes database.');
     } else {
-      const {id} = req.body
       const extantNotes = JSON.parse(data);
-      let spliceId;
       for (x=0;x<extantNotes.length;x++) {
-        if (req.params.id === id) {
+        if (req.params.noteId === extantNotes[x].id) {
+          // if there is a match, record the index at which the match occurred
           spliceId=x;
         }
       }
-      if (spliceId) { if (extantNotes.length===1) {extantNotes.length=0} else
-        {extantNotes.splice(spliceId-1,1);}}
+      // check whether a match was recorded; if so, splice the element at
+      // the corresponding index out of the array
+      if (spliceId+1) {extantNotes.splice(spliceId,1);}
+        // write the updated file
         fs.writeFile(
           './db/db.json',
           JSON.stringify(extantNotes, null, 4),
@@ -97,11 +102,7 @@ console.log();
     }
 });
 
-
-
-
-
-// res.json('Notes DELETE received, with id '+req.params.id);
+// res.json('Notes DELETE received, with id '+req.params.noteId);
 });
 
 app.get('/notes', (req,res) =>

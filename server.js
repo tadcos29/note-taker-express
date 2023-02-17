@@ -4,7 +4,7 @@ const fs = require('fs');
 const uniqid = require ('uniqid');
 const path = require('path'); //for path-joining needs
 
-const PORT = 3001; // for easy changing // change to the heroku thing
+const PORT = process.env.PORT || 3001; // for easy changing // change to the heroku thing
 
 //initialise the app
 const app = express(); 

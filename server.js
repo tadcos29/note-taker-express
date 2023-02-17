@@ -15,6 +15,8 @@ app.use(express.urlencoded({extended: true  }));
 
 app.use(express.static('public')); //allow access to public folder?
 
+//Since there's only one api of interest, no need for modularisation.
+
 app.get('/api/notes', (req,res) => {
       fs.readFile('./db/db.json', 'utf8', (err, data) => {
         if (err) {
@@ -61,6 +63,45 @@ app.post('/api/notes', (req,res) => {
     }
   });
   // res.json('Notes POST received.');
+});
+
+app.delete('/api/notes/:noteId', (req,res) => {
+console.log();
+  fs.readFile('./db/db.json', 'utf8', (err, data) => {
+    if (err) {
+      console.error(data);
+      res.json('An error has occurred when reading notes database.');
+    } else {
+      const {id} = req.body
+      const extantNotes = JSON.parse(data);
+      let spliceId;
+      for (x=0;x<extantNotes.length;x++) {
+        if (req.params.id === id) {
+          spliceId=x;
+        }
+      }
+      if (spliceId) { if (extantNotes.length===1) {extantNotes.length=0} else
+        {extantNotes.splice(spliceId-1,1);}}
+        fs.writeFile(
+          './db/db.json',
+          JSON.stringify(extantNotes, null, 4),
+          (writeErr) =>
+            writeErr
+              ? console.error(writeErr)
+              : console.info('Notes updated.')
+              );
+
+        console.log('DELETE request received -');
+        res.status(201).json({status:'success',body:extantNotes});
+      
+    }
+});
+
+
+
+
+
+// res.json('Notes DELETE received, with id '+req.params.id);
 });
 
 app.get('/notes', (req,res) =>

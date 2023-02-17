@@ -1,26 +1,66 @@
 const express = require('express');
-const { appendFile } = require('fs');
+const fs = require('fs');
+// import a utility for generating unique ids
+const uniqid = require ('uniqid');
 const path = require('path'); //for path-joining needs
-// const api = require('./routes/dispatch.js'); //this is for relegating to the dispatch file
 
 const PORT = 3001; // for easy changing // change to the heroku thing
 
-const app = express(); //initialise the app
+//initialise the app
+const app = express(); 
 
+// middleware data-handling utils from express
 app.use(express.json());
-app.use(express.urlencoded({extended: true  })); // middleware data-handling utils from express
+app.use(express.urlencoded({extended: true  })); 
 
-// app.use('/api', api); // redirect any /api/ calls to the dispatch
 app.use(express.static('public')); //allow access to public folder?
 
-
-
 app.get('/api/notes', (req,res) => {
-      res.json('Notes GET received.');
+      fs.readFile('./db/db.json', 'utf8', (err, data) => {
+        if (err) {
+          console.error(data);
+          res.json('An error has occurred when reading notes database.');
+        } else {
+          const extantNotes = JSON.parse(data);
+          console.log('GET request received -');
+          console.log(extantNotes);
+          res.json(extantNotes);
+        }
+      });
+      
 });
 
 app.post('/api/notes', (req,res) => {
-  res.json('Notes POST received.');
+  fs.readFile('./db/db.json', 'utf8', (err, data) => {
+    if (err) {
+      console.error(data);
+      res.json('An error has occurred when reading notes database.');
+    } else {
+      const {title, text} = req.body
+      if(title) {
+        const extantNotes = JSON.parse(data);
+        const newNote = {
+          id:uniqid(),
+          title,
+          text,
+        }
+        extantNotes.push(newNote);
+        fs.writeFile(
+          './db/db.json',
+          JSON.stringify(extantNotes, null, 4),
+          (writeErr) =>
+            writeErr
+              ? console.error(writeErr)
+              : console.info('Notes updated.')
+              );
+
+        console.log('POST request received -');
+        console.log(newNote);
+        res.status(201).json({status:'success',body:extantNotes});
+      }
+    }
+  });
+  // res.json('Notes POST received.');
 });
 
 app.get('/notes', (req,res) =>
